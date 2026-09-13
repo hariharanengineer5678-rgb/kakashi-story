@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Kakashi Hatake — The Copy Ninja</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:#050505;color:#fff;font-family:Arial,Helvetica,sans-serif;overflow-x:hidden}
+
+#loader{
+  position:fixed;inset:0;background:#050505;z-index:9999;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  transition:.8s
+}
+#loader.hidden{opacity:0;visibility:hidden}
+.loader-title{font-size:14px;letter-spacing:6px;text-transform:uppercase;margin-bottom:20px;opacity:.7}
+.loader-bar{width:240px;height:2px;background:#222;overflow:hidden}
+.loader-progress{width:0;height:100%;background:#fff;transition:.2s}
+.loader-percent{margin-top:12px;font-size:12px;letter-spacing:3px;opacity:.6}
+
+.hero,.combat-section,.guy-section,.memory-section{
+  position:relative;height:600vh
+}
+.hero-sticky,.combat-sticky,.guy-sticky,.memory-sticky{
+  position:sticky;top:0;width:100%;height:100vh;overflow:hidden;background:#000
+}
+#heroCanvas,#combatCanvas,#guyCanvas,#memoryCanvas{
+  position:absolute;inset:0;width:100%;height:100%;display:block
+}
+
+.hero-overlay,.combat-overlay,.guy-overlay,.memory-overlay{
+  position:absolute;inset:0;pointer-events:none
+}
+.hero-overlay{
+  background:linear-gradient(to bottom,rgba(0,0,0,.25),transparent 35%,rgba(0,0,0,.65))
+}
+.combat-overlay{
+  background:linear-gradient(to bottom,rgba(0,0,0,.08),transparent 55%,rgba(0,0,0,.30))
+}
+.guy-overlay{
+  background:linear-gradient(to bottom,rgba(0,0,0,.10),transparent 38%,rgba(0,0,0,.70))
+}
+.memory-overlay{
+  background:linear-gradient(to bottom,rgba(0,0,0,.10),transparent 40%,rgba(0,0,0,.72))
+}
+
+.hero-copy{
+  position:absolute;left:8%;bottom:13%;max-width:700px;z-index:5;transition:.3s
+}
+.hero-kicker{
+  font-size:12px;letter-spacing:7px;text-transform:uppercase;color:#bbb;margin-bottom:20px
+}
+.hero-title{
+  font-size:clamp(55px,9vw,140px);line-height:.85;font-weight:900;
+  letter-spacing:-5px;text-transform:uppercase;text-shadow:0 5px 30px #000
+}
+.hero-subtitle{
+  margin-top:25px;max-width:500px;font-size:16px;line-height:1.7;color:#bbb
+}
+.phase-label{
+  position:absolute;right:7%;top:50%;transform:translateY(-50%);
+  z-index:5;text-align:right;pointer-events:none
+}
+.phase-jp{font-size:12px;letter-spacing:5px;opacity:.5;margin-bottom:10px}
+.phase-en{font-size:14px;letter-spacing:4px;text-transform:uppercase}
+
+.scroll-indicator{
+  position:absolute;bottom:35px;left:50%;transform:translateX(-50%);
+  z-index:5;text-align:center;font-size:10px;letter-spacing:4px;
+  text-transform:uppercase;opacity:.6
+}
+.scroll-line{
+  width:1px;height:55px;background:#888;margin:12px auto 0;
+  animation:scrollLine 1.8s infinite
+}
+@keyframes scrollLine{
+  0%{transform:scaleY(0);transform-origin:top;opacity:0}
+  30%{transform:scaleY(1);opacity:1}
+  70%{transform:scaleY(1);opacity:1}
+  100%{transform:scaleY(0);transform-origin:bottom;opacity:0}
+}
+.scroll-percent{
+  position:absolute;right:30px;bottom:30px;z-index:5;
+  font-size:11px;letter-spacing:2px;opacity:.5
+}
+
+/* Second section: storyboard sequence 47.png -> 62.png.
+   Text is already embedded inside these 16 images, so no extra
+   caption layer is placed over them. */
+.combat-progress{
+  position:absolute;right:7%;top:8%;z-index:5;
+  font-size:11px;letter-spacing:3px;opacity:.45;pointer-events:none
+}
+.combat-vignette{
+  position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 180px rgba(0,0,0,.45)
+}
+
+/* Third section: Might Guy & Kakashi */
+.guy-label{
+  position:absolute;left:7%;top:12%;z-index:5;pointer-events:none
+}
+.guy-kicker{
+  font-size:12px;letter-spacing:7px;text-transform:uppercase;
+  color:#bbb;margin-bottom:12px;opacity:.6
+}
+.guy-title{
+  font-size:clamp(28px,4vw,60px);letter-spacing:-2px;text-transform:uppercase
+}
+.guy-progress{
+  position:absolute;right:7%;top:12%;z-index:5;
+  font-size:11px;letter-spacing:3px;opacity:.55
+}
+.guy-caption{
+  position:absolute;left:7%;bottom:11%;z-index:5;max-width:470px;
+  pointer-events:none;transition:.3s
+}
+.guy-caption .small{
+  font-size:10px;letter-spacing:4px;text-transform:uppercase;
+  opacity:.55;margin-bottom:12px
+}
+.guy-caption h2{
+  font-size:clamp(30px,5vw,75px);line-height:.9;
+  text-transform:uppercase;letter-spacing:-3px
+}
+.guy-caption p{
+  margin-top:18px;font-size:14px;line-height:1.7;color:#aaa
+}
+.guy-vignette{
+  position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 180px rgba(0,0,0,.55)
+}
+
+/* Fourth section: Obito + Rin memory */
+.memory-label{
+  position:absolute;left:7%;top:11%;z-index:5;pointer-events:none
+}
+.memory-kicker{
+  font-size:12px;letter-spacing:7px;text-transform:uppercase;
+  color:#bbb;margin-bottom:12px;opacity:.55
+}
+.memory-title{
+  font-size:clamp(30px,5vw,72px);line-height:.9;
+  letter-spacing:-3px;text-transform:uppercase
+}
+.memory-progress{
+  position:absolute;right:7%;top:12%;z-index:5;
+  font-size:11px;letter-spacing:3px;opacity:.55
+}
+.memory-caption{
+  position:absolute;left:7%;bottom:11%;z-index:5;max-width:470px;
+  pointer-events:none;transition:.3s
+}
+.memory-caption .small{
+  font-size:10px;letter-spacing:4px;text-transform:uppercase;
+  opacity:.55;margin-bottom:12px
+}
+.memory-caption h2{
+  font-size:clamp(30px,5vw,75px);line-height:.9;
+  text-transform:uppercase;letter-spacing:-3px
+}
+.memory-caption p{
+  margin-top:18px;font-size:14px;line-height:1.7;color:#aaa
+}
+.memory-vignette{
+  position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 180px rgba(0,0,0,.58)
+}
+
+/* Final section: 63 -> 71 */
+.final-section{
+  min-height:180vh;
+  position:relative;
+  background:#000;
+}
+.final-sticky{
+  position:sticky;
+  top:0;
+  width:100%;
+  height:100vh;
+  overflow:hidden;
+  background:#000;
+  isolation:isolate;
+}
+#finalCanvas{
+  --ending-fade:0;
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  background:#000;
+}
+.final-vignette{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:2;
+  background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,.22) 68%,rgba(0,0,0,.78) 100%);
+}
+.final-fade{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:3;
+  background:#000;
+  opacity:var(--ending-fade,0);
+  transition:opacity .08s linear;
+}
+.final-progress{
+  position:absolute;
+  right:30px;
+  bottom:25px;
+  z-index:4;
+  font-size:10px;
+  letter-spacing:3px;
+  color:#fff;
+  opacity:.45;
+  pointer-events:none;
+}
+
+@media(max-width:800px){
+  .hero-copy{left:6%;right:6%;bottom:15%}
+  .hero-title{letter-spacing:-3px}
+  .hero-subtitle{font-size:14px}
+  .phase-label{top:15%;right:6%;transform:none}
+  .scroll-percent,.combat-progress{right:15px;bottom:15px}
+  .guy-label{left:6%;top:10%}
+  .guy-caption{left:6%;right:6%;bottom:10%}
+  .guy-progress{right:15px;top:10%}
+  .memory-label{left:6%;top:10%}
+  .memory-caption{left:6%;right:6%;bottom:10%}
+  .memory-progress{right:15px;top:10%}
+  .final-progress{right:15px;bottom:15px}
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-title">Loading Kakashi</div>
+  <div class="loader-bar"><div class="loader-progress" id="loaderProgress"></div></div>
+  <div class="loader-percent" id="loaderPercent">0%</div>
+</div>
+
+<!-- SECTION 1: 01 -> 08 -->
+<section class="hero" id="hero">
+  <div class="hero-sticky">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-overlay"></div>
+
+    <div class="hero-copy" id="heroCopy">
+      <div class="hero-kicker">Hatake Kakashi</div>
+      <h1 class="hero-title">Kakashi</h1>
+      <p class="hero-subtitle">
+        The Copy Ninja. The man who has seen countless battles and mastered a thousand techniques.
+      </p>
+    </div>
+
+    <div class="phase-label">
+      <div class="phase-jp" id="phaseJP">写輪眼</div>
+      <div class="phase-en" id="phaseEN">The Copy Ninja</div>
+    </div>
+
+    <div class="scroll-indicator">
+      Scroll to experience
+      <div class="scroll-line"></div>
+    </div>
+    <div class="scroll-percent" id="scrollPercent">0%</div>
+  </div>
+</section>
+
+<!-- SECTION 2: 47 -> 62 -->
+<section class="combat-section" id="combat">
+  <div class="combat-sticky">
+    <canvas id="combatCanvas"></canvas>
+    <div class="combat-overlay"></div>
+    <div class="combat-vignette"></div>
+    <div class="combat-progress" id="combatProgress">0%</div>
+  </div>
+</section>
+
+<!-- SECTION 3: 37 -> 46 -->
+<section class="guy-section" id="guy">
+  <div class="guy-sticky">
+    <canvas id="guyCanvas"></canvas>
+    <div class="guy-overlay"></div>
+    <div class="guy-vignette"></div>
+
+    <div class="guy-label">
+      <div class="guy-kicker">Might Guy &amp; Kakashi Hatake</div>
+      <div class="guy-title">Rivals<br>For Life</div>
+    </div>
+
+    <div class="guy-progress" id="guyProgress">0%</div>
+
+    <div class="guy-caption" id="guyCaption">
+      <div class="small" id="guySmall">Different paths</div>
+      <h2 id="guyHeading">Same Fire</h2>
+      <p id="guyDescription">
+        Two very different shinobi. One friendship that never stopped moving forward.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: 27 -> 35 -->
+<section class="memory-section" id="memory">
+  <div class="memory-sticky">
+    <canvas id="memoryCanvas"></canvas>
+    <div class="memory-overlay"></div>
+    <div class="memory-vignette"></div>
+
+    <div class="memory-label">
+      <div class="memory-kicker">Hatake Kakashi</div>
+      <div class="memory-title">Some Bonds<br>Never Fade</div>
+    </div>
+
+    <div class="memory-progress" id="memoryProgress">0%</div>
+
+    <div class="memory-caption" id="memoryCaption">
+      <div class="small" id="memorySmall">A distant memory</div>
+      <h2 id="memoryHeading">Still Waiting</h2>
+      <p id="memoryDescription">
+        Obito and Rin run toward Kakashi through the fading light.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL SECTION: 63 -> 71 -->
+<section class="final-section" id="final">
+  <div class="final-sticky">
+    <canvas id="finalCanvas"></canvas>
+    <div class="final-vignette"></div>
+    <div class="final-fade"></div>
+    <div class="final-progress" id="finalProgress">0%</div>
+  </div>
+</section>
+
+<script src="main.js"></script>
+</body>
+</html>
